@@ -1,0 +1,1 @@
+* * * * * cd ~/coinsplitter && python coinsplitter.py >> coinsplitter.log 2>> coinsplitter.log
