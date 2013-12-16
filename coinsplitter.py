@@ -3,6 +3,8 @@ from decimal import *
 from bitcoinrpc.authproxy import AuthServiceProxy
 import ConfigParser
 import pprint
+import smtplib
+from email.mime.text import MIMEText
 from datetime import datetime
 #import sys
 
@@ -21,8 +23,11 @@ account = config.get('config', 'account')
 
 stakeholders = eval(config.get('config', 'stakeholders'))
 
+email = config.getboolean('config', 'email')
+
 # getting current account state
-access = AuthServiceProxy("{!s}://{!s}:{!s}@{!s}:{!s}".format(protocol, rpcuser, rpcpass, host, port))
+access = AuthServiceProxy("{!s}://{!s}:{!s}@{!s}:{!s}"
+                .format(protocol, rpcuser, rpcpass, host, port))
 currentbalance = Decimal(access.getbalance(account))
 
 if currentbalance > (mintx + txfee):
@@ -40,7 +45,8 @@ if currentbalance > (mintx + txfee):
 
     # calculating amounts to send
     for key, value in stakeholders.items():
-        value['amount'] = float((value['shares']*pps).quantize(Decimal('.00000000'), rounding=ROUND_DOWN))
+        value['amount'] = float((value['shares'] * pps)
+                        .quantize(Decimal('.00000000'), rounding=ROUND_DOWN))
 
     print datetime.now()
 
@@ -54,10 +60,31 @@ if currentbalance > (mintx + txfee):
         txdict[value['address']] = value['amount']
 
     print "tx number:"
-    print access.sendmany(account, txdict)
+    txnum = access.sendmany(account, txdict)
+    print txnum
 
     print "-" * 40
 
+    if email:
+
+        # formatting email
+        msg = MIMEText("{!s}\ntxinfo\n{!s}\ntxnum:\n{!s}"
+                    .format(datetime.now(), pp.pformat(stakeholders), txnum))
+
+        msg['Subject'] = 'coinsplitter transaction information'
+        From = 'coinsplitter'
+        msg['From'] = From
+        To = ''
+        for key, value in stakeholders.items():
+            To += value['email'] + ","
+        To = To[0:-1]
+        msg['To'] = To
+
+        # sending email
+        s = smtplib.SMTP('localhost')
+        s.sendmail(From, To, msg.as_string())
+        s.quit()
+
 #else:
 
-    #sys.stderr.write("{!s}\nnot enough coins\n{!s}\n".format(datetime.now(), "-"*40))
+    #sys.stderr.write("{!s}\nnot enough coins\n{!s}\n".format(datetime.now(), "-" * 40))
