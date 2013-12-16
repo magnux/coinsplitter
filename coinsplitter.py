@@ -8,7 +8,7 @@ from datetime import datetime
 
 # reading the config
 config = ConfigParser.RawConfigParser()
-config.read('config.cfg')
+config.read('coinsplitter.cfg')
 
 protocol = config.get('config', 'protocol')
 host = config.get('config', 'host')
@@ -23,9 +23,12 @@ stakeholders = eval(config.get('config', 'stakeholders'))
 
 # getting current account state
 access = AuthServiceProxy("{!s}://{!s}:{!s}@{!s}:{!s}".format(protocol, rpcuser, rpcpass, host, port))
-currentbalance = access.getbalance(account)
+currentbalance = Decimal(access.getbalance(account))
 
 if currentbalance > (mintx + txfee):
+
+    # setting tx fee
+    access.settxfee(float(txfee))
 
     # summing the total shares
     totalshares = Decimal(0)
