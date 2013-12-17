@@ -48,28 +48,24 @@ if currentbalance > (mintx + txfee):
         value['amount'] = float((value['shares'] * pps)
                         .quantize(Decimal('.00000000'), rounding=ROUND_DOWN))
 
-    print datetime.now()
-
-    print "tx info:"
-    pp = pprint.PrettyPrinter(indent=4)
-    pp.pprint(stakeholders)
-
     # creating transaction dict
     txdict = {}
     for key, value in stakeholders.items():
         txdict[value['address']] = value['amount']
 
-    print "tx number:"
     txnum = access.sendmany(account, txdict)
-    print txnum
 
+    pp = pprint.PrettyPrinter(indent=4)
+    message = ("{!s}\ntx info:\ntx total: {!s}\ntx fee: {!s}\ntx stakeholders:\n{!s}\ntxnum:\n{!s}"
+        .format(datetime.now(), (currentbalance - txfee), txfee, pp.pformat(stakeholders), txnum))
+
+    print message
     print "-" * 40
 
     if email:
 
         # formatting email
-        msg = MIMEText("{!s}\ntxinfo\n{!s}\ntxnum:\n{!s}"
-                    .format(datetime.now(), pp.pformat(stakeholders), txnum))
+        msg = MIMEText(message)
 
         msg['Subject'] = 'coinsplitter transaction information'
         From = 'coinsplitter'
