@@ -78,7 +78,8 @@ if currentbalance > (mintx + txfee):
 
         # sending email
         s = smtplib.SMTP('localhost')
-        s.sendmail(From, To, msg.as_string())
+        rcpts = [r.strip() for r in To.split(',') if r]
+        s.sendmail(From, rcpts, msg.as_string())
         s.quit()
 
 #else:
