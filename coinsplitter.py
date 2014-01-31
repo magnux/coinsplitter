@@ -6,6 +6,7 @@ import pprint
 import smtplib
 from email.mime.text import MIMEText
 from datetime import datetime
+from subprocess import call
 #import sys
 
 # reading the config
@@ -25,63 +26,78 @@ stakeholders = eval(config.get('config', 'stakeholders'))
 
 email = config.getboolean('config', 'email')
 
+binary = config.getboolean('config', 'binary')
+path = config.getboolean('config', 'path')
+
 # getting current account state
 access = AuthServiceProxy("{!s}://{!s}:{!s}@{!s}:{!s}"
                 .format(protocol, rpcuser, rpcpass, host, port))
 currentbalance = Decimal(access.getbalance(account))
+try:
+    if currentbalance > (mintx + txfee):
 
-if currentbalance > (mintx + txfee):
+        # setting tx fee
+        access.settxfee(float(txfee))
 
-    # setting tx fee
-    access.settxfee(float(txfee))
-
-    # summing the total shares
-    totalshares = Decimal(0)
-    for key, value in stakeholders.items():
-        totalshares += value['shares']
-
-    # calculating the pay per share
-    pps = (currentbalance - txfee) / totalshares
-
-    # calculating amounts to send
-    for key, value in stakeholders.items():
-        value['amount'] = float((value['shares'] * pps)
-                        .quantize(Decimal('.00000000'), rounding=ROUND_DOWN))
-
-    # creating transaction dict
-    txdict = {}
-    for key, value in stakeholders.items():
-        txdict[value['address']] = value['amount']
-
-    txnum = access.sendmany(account, txdict)
-
-    pp = pprint.PrettyPrinter(indent=4)
-    message = ("{!s}\ntx info:\ntx total: {!s}\ntx fee: {!s}\ntx stakeholders:\n{!s}\ntxnum:\n{!s}"
-        .format(datetime.now(), (currentbalance - txfee), txfee, pp.pformat(stakeholders), txnum))
-
-    print message
-    print "-" * 40
-
-    if email:
-
-        # formatting email
-        msg = MIMEText(message)
-
-        msg['Subject'] = 'coinsplitter transaction information'
-        From = 'coinsplitter'
-        msg['From'] = From
-        To = ''
+        # summing the total shares
+        totalshares = Decimal(0)
         for key, value in stakeholders.items():
-            To += value['email'] + ","
-        To = To[0:-1]
-        msg['To'] = To
+            totalshares += value['shares']
 
-        # sending email
-        s = smtplib.SMTP('localhost')
-        rcpts = [r.strip() for r in To.split(',') if r]
-        s.sendmail(From, rcpts, msg.as_string())
-        s.quit()
+        # calculating the pay per share
+        pps = (currentbalance - txfee) / totalshares
 
-#else:
+        # calculating amounts to send
+        for key, value in stakeholders.items():
+            value['amount'] = float((value['shares'] * pps)
+                            .quantize(Decimal('.00000000'), rounding=ROUND_DOWN))
 
-    #sys.stderr.write("{!s}\nnot enough coins\n{!s}\n".format(datetime.now(), "-" * 40))
+        # creating transaction dict
+        txdict = {}
+        for key, value in stakeholders.items():
+            txdict[value['address']] = value['amount']
+
+        txnum = access.sendmany(account, txdict)
+
+        pp = pprint.PrettyPrinter(indent=4)
+        message = ("{!s}\ntx info:\ntx total: {!s}\ntx fee: {!s}\ntx stakeholders:\n{!s}\ntxnum:\n{!s}"
+            .format(datetime.now(), (currentbalance - txfee), txfee, pp.pformat(stakeholders), txnum))
+
+        print message
+        print "-" * 40
+
+        if email:
+
+            # formatting email
+            msg = MIMEText(message)
+
+            msg['Subject'] = 'coinsplitter transaction information'
+            From = 'coinsplitter'
+            msg['From'] = From
+            To = ''
+            for key, value in stakeholders.items():
+                To += value['email'] + ","
+            To = To[0:-1]
+            msg['To'] = To
+
+            # sending email
+            s = smtplib.SMTP('localhost')
+            rcpts = [r.strip() for r in To.split(',') if r]
+            s.sendmail(From, rcpts, msg.as_string())
+            s.quit()
+
+    else:
+        sys.stderr.write("{!s} : Not enough coins\n"
+                         .format(datetime.now()))
+
+except:
+
+    procs = [p for p in psutil.get_process_list() if p.name==binary]
+
+    if len(procs) < 1:
+        sys.stderr.write("{!s} : Daemon not running, attemping to restart: {!s}\n"
+                         .format(datetime.now(), binary))
+        call(path + binary, "-daemon")
+    else:
+        sys.stderr.write("{!s} : Something weird happened:\n{!s}\n"
+                         .format(datetime.now(), sys.exc_info()[0]))
