@@ -7,7 +7,8 @@ import smtplib
 from email.mime.text import MIMEText
 from datetime import datetime
 from subprocess import call
-#import sys
+import sys
+import psutil
 
 # reading the config
 config = ConfigParser.RawConfigParser()
