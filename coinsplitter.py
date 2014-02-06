@@ -26,8 +26,8 @@ stakeholders = eval(config.get('config', 'stakeholders'))
 
 email = config.getboolean('config', 'email')
 
-binary = config.getboolean('config', 'binary')
-path = config.getboolean('config', 'path')
+binary = config.get('config', 'binary')
+path = config.get('config', 'path')
 
 # getting current account state
 access = AuthServiceProxy("{!s}://{!s}:{!s}@{!s}:{!s}"
