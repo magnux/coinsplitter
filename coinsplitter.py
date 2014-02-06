@@ -29,11 +29,12 @@ email = config.getboolean('config', 'email')
 binary = config.get('config', 'binary')
 path = config.get('config', 'path')
 
-# getting current account state
-access = AuthServiceProxy("{!s}://{!s}:{!s}@{!s}:{!s}"
-                .format(protocol, rpcuser, rpcpass, host, port))
-currentbalance = Decimal(access.getbalance(account))
 try:
+    # getting current account state
+    access = AuthServiceProxy("{!s}://{!s}:{!s}@{!s}:{!s}"
+                    .format(protocol, rpcuser, rpcpass, host, port))
+    currentbalance = Decimal(access.getbalance(account))
+
     if currentbalance > (mintx + txfee):
 
         # setting tx fee
