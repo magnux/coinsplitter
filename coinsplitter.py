@@ -99,7 +99,7 @@ except:
     if len(procs) < 1:
         sys.stderr.write("{!s} : Daemon not running, attemping to restart: {!s}\n"
                          .format(datetime.now(), binary))
-        call(path + binary, "-daemon")
+        call([path + binary, "-daemon"])
     else:
         sys.stderr.write("{!s} : Something weird happened:\n{!s}\n"
                          .format(datetime.now(), sys.exc_info()[0]))
