@@ -103,4 +103,4 @@ except:
     else:
         pp = pprint.PrettyPrinter(indent=4)
         sys.stderr.write("{!s} : Something weird happened:\n{!s}\n"
-                         .format(datetime.now(), pp.format(sys.exc_info())))
+                         .format(datetime.now(), pp.pformat(sys.exc_info())))
