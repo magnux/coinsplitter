@@ -101,5 +101,6 @@ except:
                          .format(datetime.now(), binary))
         call([path + binary, "-daemon"])
     else:
+        pp = pprint.PrettyPrinter(indent=4)
         sys.stderr.write("{!s} : Something weird happened:\n{!s}\n"
-                         .format(datetime.now(), sys.exc_info()[0]))
+                         .format(datetime.now(), pp.format(sys.exc_info())))
